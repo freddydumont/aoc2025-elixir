@@ -1,17 +1,24 @@
 defmodule SecretEntrance do
-  @moduledoc """
+  @doc """
   Calculates the number of times the dial is left pointing at 0 after any rotation in the sequence.
     - numbers go from 0 to 99
     - dial starts at 50
     - R increments dial
     - L decrements dial
   """
-
   def count_dial_at_zero(path, dial \\ 50, count \\ 0) do
     File.stream!(path, [:trim_bom, encoding: :utf8])
     |> Stream.map(&String.trim/1)
     |> Enum.reduce({dial, count}, fn line, {dial, count} -> parse_line(line, dial, count) end)
     |> elem(1)
+  end
+
+  @doc """
+  Counts the number of time the dial goes past 0, whether during or at the end of
+  a rotation. Same dial functionality as above.
+  """
+  def count_dial_past_zero(_path, _dial \\ 50, count \\ 0) do
+    count
   end
 
   defp parse_line(line, dial, count) do
