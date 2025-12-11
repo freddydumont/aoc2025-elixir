@@ -1,10 +1,14 @@
 defmodule SecretEntrance do
-  @doc """
-  Calculates the number of times the dial is left pointing at 0 after any rotation in the sequence.
+  @moduledoc """
+  Calculates the password to the secret entrance by counting zeroes on a dial.
     - numbers go from 0 to 99
     - dial starts at 50
     - R increments dial
     - L decrements dial
+  """
+
+  @doc """
+  Calculates the number of times the dial points at 0 after any rotation in the sequence.
   """
   def count_dial_at_zero(path, dial \\ 50, count \\ 0) do
     File.stream!(path, [:trim_bom, encoding: :utf8])
@@ -14,15 +18,12 @@ defmodule SecretEntrance do
   end
 
   @doc """
-  Counts the number of time the dial is on 0, whether during a rotation or at the end of one.
-  Same dial functionality as above.
+  Counts the number of time the dial clicks on 0, whether during a rotation or at the end of one.
   """
   def count_dial_past_zero(path, dial \\ 50, count \\ 0) do
     File.stream!(path, [:trim_bom, encoding: :utf8])
     |> Stream.map(&String.trim/1)
-    |> Enum.reduce({dial, count}, fn line, {dial, count} ->
-      parse_line(line, dial, count, 2)
-    end)
+    |> Enum.reduce({dial, count}, fn line, {dial, count} -> parse_line(line, dial, count, 2) end)
     |> elem(1)
   end
 
