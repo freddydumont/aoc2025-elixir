@@ -9,18 +9,36 @@ defmodule SecretEntrance do
   def count_dial_at_zero(path, dial \\ 50, count \\ 0) do
     File.stream!(path, [:trim_bom, encoding: :utf8])
     |> Stream.map(&String.trim/1)
-    |> Enum.reduce({dial, count}, fn line, {dial, count} -> parse_line(line, dial, count) end)
+    |> Enum.reduce({dial, count}, fn line, {dial, count} -> parse_line(line, dial, count, 1) end)
     |> elem(1)
   end
 
-  defp parse_line(line, dial, count) do
+  @doc """
+  Counts the number of time the dial is on 0, whether during a rotation or at the end of one.
+  Same dial functionality as above.
+  """
+  def count_dial_past_zero(path, dial \\ 50, count \\ 0) do
+    File.stream!(path, [:trim_bom, encoding: :utf8])
+    |> Stream.map(&String.trim/1)
+    |> Enum.reduce({dial, count}, fn line, {dial, count} ->
+      parse_line(line, dial, count, 2)
+    end)
+    |> elem(1)
+  end
+
+  defp parse_line(line, dial, count, part) do
     {direction, number} = String.split_at(line, 1)
+    value = String.to_integer(number)
 
-    new_dial =
-      String.to_integer(number)
-      |> calculate_new_dial(direction, dial)
+    new_dial = calculate_new_dial(value, direction, dial)
 
-    {new_dial, increment_if_zero(count, new_dial)}
+    {
+      new_dial,
+      case part do
+        1 -> increment_if_zero(count, new_dial)
+        2 -> calculate_rotations(direction, dial, value) + count
+      end
+    }
   end
 
   defp calculate_new_dial(rotate_by, "R", dial), do: rem(dial + rotate_by, 100)
@@ -33,35 +51,16 @@ defmodule SecretEntrance do
   defp increment_if_zero(count, 0), do: count + 1
   defp increment_if_zero(count, _), do: count
 
-  @doc """
-  Counts the number of time the dial is on 0, whether during a rotation or at the end of one.
-  Same dial functionality as above.
-  """
-  def count_dial_past_zero(path, dial \\ 50, count \\ 0) do
-    File.stream!(path, [:trim_bom, encoding: :utf8])
-    |> Stream.map(&String.trim/1)
-    |> Enum.reduce({dial, count}, fn line, {dial, count} ->
-      parse_line_part_2(line, dial, count)
-    end)
-    |> elem(1)
+  defp calculate_rotations("R", dial, value), do: div(dial + value, 100)
+  defp calculate_rotations("L", dial, value) when dial - value == 0, do: 1
+
+  defp calculate_rotations("L", dial, value) when dial - value < 0 do
+    # We count 1 pass through 0, unless we started on 0 (counted on last pass, fn above)
+    passes_through_zero = if dial == 0, do: 0, else: 1
+    full_rotations = div(dial - value, 100) |> abs()
+
+    passes_through_zero + full_rotations
   end
 
-  defp parse_line_part_2(line, dial, count) do
-    {direction, number} = String.split_at(line, 1)
-    value = String.to_integer(number)
-
-    {
-      calculate_new_dial(value, direction, dial),
-      calculate_rotations(direction, dial, value) + count
-    }
-  end
-
-  defp calculate_rotations(direction, dial, value) do
-    case {direction, dial - value} do
-      {"R", _} -> div(dial + value, 100)
-      {"L", 0} -> 1
-      {"L", n} when n < 0 -> (div(n, 100) |> abs()) + if(dial != 0, do: 1, else: 0)
-      _ -> 0
-    end
-  end
+  defp calculate_rotations(_, _, _), do: 0
 end
