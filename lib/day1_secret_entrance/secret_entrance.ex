@@ -8,26 +8,26 @@ defmodule SecretEntrance do
   """
 
   @doc """
-  Calculates the number of times the dial points at 0 after any rotation in the sequence.
+  Counts zeros on the dial based on the specified counting mode.
+
+  ## Parameters
+  - `mode`:
+    - `:at_zero` counts when dial points at 0 *after* a rotation
+    - `:past_zero` counts every time dial passes through 0 *during or after* a rotation
+  - `path`: file path containing rotation instructions
+  - `dial`: starting dial position (default: 50)
+  - `count`: starting count (default: 0)
   """
-  def count_dial_at_zero(path, dial \\ 50, count \\ 0) do
+  def count_zeros(mode, path, dial \\ 50, count \\ 0) do
     File.stream!(path, [:trim_bom, encoding: :utf8])
     |> Stream.map(&String.trim/1)
-    |> Enum.reduce({dial, count}, fn line, {dial, count} -> parse_line(line, dial, count, 1) end)
+    |> Enum.reduce({dial, count}, fn line, {dial, count} ->
+      parse_line(line, dial, count, mode)
+    end)
     |> elem(1)
   end
 
-  @doc """
-  Counts the number of time the dial clicks on 0, whether during a rotation or at the end of one.
-  """
-  def count_dial_past_zero(path, dial \\ 50, count \\ 0) do
-    File.stream!(path, [:trim_bom, encoding: :utf8])
-    |> Stream.map(&String.trim/1)
-    |> Enum.reduce({dial, count}, fn line, {dial, count} -> parse_line(line, dial, count, 2) end)
-    |> elem(1)
-  end
-
-  defp parse_line(line, dial, count, part) do
+  defp parse_line(line, dial, count, counting_mode) do
     {direction, number} = String.split_at(line, 1)
     value = String.to_integer(number)
 
@@ -35,9 +35,9 @@ defmodule SecretEntrance do
 
     {
       new_dial,
-      case part do
-        1 -> increment_if_zero(count, new_dial)
-        2 -> calculate_rotations(direction, dial, value) + count
+      case counting_mode do
+        :at_zero -> increment_if_zero(count, new_dial)
+        :past_zero -> calculate_rotations(direction, dial, value) + count
       end
     }
   end
@@ -49,6 +49,7 @@ defmodule SecretEntrance do
 
   defp normalize_dial(dial) when dial < 0, do: 100 + dial
   defp normalize_dial(dial), do: dial
+
   defp increment_if_zero(count, 0), do: count + 1
   defp increment_if_zero(count, _), do: count
 
