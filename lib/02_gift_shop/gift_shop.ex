@@ -13,21 +13,22 @@ defmodule GiftShop do
     |> Enum.reduce(0, fn range, sum -> parse_range(range, sum) end)
   end
 
+  # Parses the given range and add invalid IDs to sum
   defp parse_range(range, sum) do
     [first_id, last_id] = String.split(range, "-")
-    expanded_range = Range.to_list(String.to_integer(first_id)..String.to_integer(last_id))
-    # for each element in expanded_range:
-    Enum.reduce(expanded_range, sum, fn id, sum ->
-      # convert back to string
+    range_start = String.to_integer(first_id)
+    range_stop = String.to_integer(last_id)
+
+    range_start..range_stop
+    |> Range.to_list()
+    |> Enum.reduce(sum, fn id, sum ->
       as_string = Integer.to_string(id)
       char_count = String.length(as_string)
-      # pass if character count is odd
+
       if Integer.is_odd(char_count) do
         sum
       else
-        # split in two equal parts and check equality
         {first_part, second_part} = String.split_at(as_string, div(char_count, 2))
-        # if equal, add id to sum
         if first_part == second_part, do: sum + id, else: sum
       end
     end)
