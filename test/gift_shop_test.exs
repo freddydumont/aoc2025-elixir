@@ -11,10 +11,11 @@ defmodule GiftShopTest do
   end
 
   test "[Part 2] example input returns the invalid IDs total" do
-    assert GiftShop.validate_IDs(:any_pattern, "lib/02_gift_shop/input_test.txt") == 4_174_379_265
+    assert GiftShop.validate_IDs(:any_pattern, "lib/02_gift_shop/input_test.txt") ==
+             4_174_379_265
   end
 
   test "[Part 2] full input returns the invalid IDs total" do
-    assert GiftShop.validate_IDs(:any_pattern, "lib/02_gift_shop/input_test.txt") == 0
+    assert GiftShop.validate_IDs(:any_pattern, "lib/02_gift_shop/input.txt") == 27_469_417_404
   end
 end

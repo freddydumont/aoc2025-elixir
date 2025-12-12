@@ -2,8 +2,10 @@ defmodule GiftShop do
   @moduledoc """
   Validates IDs in the given ranges.
   - The ranges are separated by commas (,); each range gives its first ID and last ID separated by a dash (-).
-  - invalid IDs are any ID which is made only of some sequence of digits repeated twice.
-  - no leading 0 in patterns
+  - provided IDs do not have leading 0
+  - invalid IDs are any ID which include a repeated sequence of digits
+    - when mode is `:exact_half`: repeated *exactly* twice
+    - when mode is `:any_pattern`: repeated *at least* twice
   """
   require Integer
 
@@ -36,16 +38,22 @@ defmodule GiftShop do
           end
 
         :any_pattern ->
-          # part 2 is any repeating pattern
-          # we'll need to check for patterns of size: 1 to div(char_count, 2)
-          # for a char_count of 7 we'd check from 1 to 3
-          # for a char_count of 15 we'd check from 1 to 7
-          # ? for pattern 1 we only need to check that all chars are equal (no need to bother as below takes care of it)
-          # for pattern 2+ we have to split at specified chars, and check equality for all parts
-          # all of this can be handled by creating a regular expression from the part we want to match,
-          # and checking for matches: 123123 -> /(123){2}/
+          # todo: this repeats the same check for all IDs, but consecutive numbers will all be validated by the same check
 
-          sum
+          if Enum.any?(1..div(char_count, 2)//1, fn pattern_size ->
+               if rem(char_count, pattern_size) == 0 do
+                 {pattern, _} = String.split_at(as_string, pattern_size)
+
+                 ~r/(#{pattern}){#{div(char_count, pattern_size)}}/
+                 |> Regex.match?(as_string)
+               else
+                 false
+               end
+             end) do
+            sum + id
+          else
+            sum
+          end
       end
     end)
   end
