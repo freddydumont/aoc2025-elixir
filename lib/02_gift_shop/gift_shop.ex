@@ -8,7 +8,8 @@ defmodule GiftShop do
   require Integer
 
   def validate_IDs(path) do
-    File.read!(path)
+    path
+    |> File.read!()
     |> String.split(",", trim: true)
     |> Enum.reduce(0, fn range, sum -> parse_range(range, sum) end)
   end
@@ -24,6 +25,15 @@ defmodule GiftShop do
     |> Enum.reduce(sum, fn id, sum ->
       as_string = Integer.to_string(id)
       char_count = String.length(as_string)
+
+      # part 2 is any repeating pattern
+      # we'll need to check for patterns of size: 1 to div(char_count, 2)
+      # for a char_count of 7 we'd check from 1 to 3
+      # for a char_count of 15 we'd check from 1 to 7
+      # ? for pattern 1 we only need to check that all chars are equal (no need to bother as below takes care of it)
+      # for pattern 2+ we have to split at specified chars, and check equality for all parts
+      # all of this can be handled by creating a regular expression from the part we want to match,
+      # and checking for matches: 123123 -> /(123){2}/
 
       if Integer.is_odd(char_count) do
         sum
