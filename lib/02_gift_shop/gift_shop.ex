@@ -40,21 +40,24 @@ defmodule GiftShop do
         :any_pattern ->
           # todo: this repeats the same check for all IDs, but consecutive numbers will all be validated by the same check
 
-          if Enum.any?(1..div(char_count, 2)//1, fn pattern_size ->
-               if rem(char_count, pattern_size) == 0 do
-                 {pattern, _} = String.split_at(as_string, pattern_size)
-
-                 ~r/(#{pattern}){#{div(char_count, pattern_size)}}/
-                 |> Regex.match?(as_string)
-               else
-                 false
-               end
-             end) do
-            sum + id
-          else
-            sum
-          end
+          if Enum.any?(
+               1..div(char_count, 2)//1,
+               &has_repeated_pattern?(&1, char_count, as_string)
+             ),
+             do: sum + id,
+             else: sum
       end
     end)
+  end
+
+  defp has_repeated_pattern?(pattern_size, char_count, _)
+       when rem(char_count, pattern_size) != 0, do: false
+
+  defp has_repeated_pattern?(pattern_size, char_count, as_string) do
+    as_string
+    |> String.split_at(pattern_size)
+    |> elem(0)
+    |> then(&~r/(#{&1}){#{div(char_count, pattern_size)}}/)
+    |> Regex.match?(as_string)
   end
 end
