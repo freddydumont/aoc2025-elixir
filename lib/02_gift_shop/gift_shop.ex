@@ -37,15 +37,14 @@ defmodule GiftShop do
             if first_part == second_part, do: sum + id, else: sum
           end
 
+        # todo: this repeats the same check for all IDs, but consecutive numbers will all be validated by the same check
         :any_pattern ->
-          # todo: this repeats the same check for all IDs, but consecutive numbers will all be validated by the same check
-
-          if Enum.any?(
-               1..div(char_count, 2)//1,
-               &has_repeated_pattern?(&1, char_count, as_string)
-             ),
-             do: sum + id,
-             else: sum
+          1..div(char_count, 2)//1
+          |> Enum.any?(&has_repeated_pattern?(&1, char_count, as_string))
+          |> case do
+            true -> sum + id
+            false -> sum
+          end
       end
     end)
   end
@@ -54,10 +53,12 @@ defmodule GiftShop do
        when rem(char_count, pattern_size) != 0, do: false
 
   defp has_repeated_pattern?(pattern_size, char_count, as_string) do
+    repeat_count = div(char_count, pattern_size)
+
     as_string
     |> String.split_at(pattern_size)
     |> elem(0)
-    |> then(&~r/(#{&1}){#{div(char_count, pattern_size)}}/)
+    |> then(&~r/(#{&1}){#{repeat_count}}/)
     |> Regex.match?(as_string)
   end
 end
